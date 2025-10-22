@@ -62,7 +62,7 @@
   </style>
 </head>
 <body>
-  <h2>📋 Kalkulator Kebutuhan Orang per Hari (Multi-Pekerjaan)</h2>
+  <h2>📋 Kalkulator Kebutuhan Orang per Bulan (Multi-Pekerjaan)</h2>
 
   <div id="container-pekerjaan"></div>
 
@@ -90,7 +90,7 @@
         <label>Norma HK/ha</label>
         <input type="number" id="norma_${index}" step="0.01" />
 
-        <label>HKE (hari kerja efektif)</label>
+        <label>HKE (hari kerja efektif total)</label>
         <input type="number" id="hke_${index}" />
 
         <label>Periode pekerjaan (tanggal awal)</label>
@@ -102,6 +102,17 @@
       container.appendChild(div);
     }
 
+    function getMonthKey(date) {
+      const year = date.getFullYear();
+      const month = date.getMonth() + 1;
+      return `${year}-${String(month).padStart(2, '0')}`;
+    }
+
+    function formatMonthName(date) {
+      const options = { month: 'short', year: 'numeric' };
+      return date.toLocaleDateString('id-ID', options);
+    }
+
     function hitungSemua() {
       if (index === 0) {
         alert('Tambahkan minimal satu pekerjaan!');
@@ -111,7 +122,7 @@
       let totalHKSemua = 0;
       let totalOrangSemua = 0;
       let totalMandorSemua = 0;
-      let output = '<h3>Hasil Perhitungan Semua Pekerjaan</h3>';
+      let output = '<h3>Hasil Perhitungan Semua Pekerjaan (Per Bulan)</h3>';
 
       for (let i = 1; i <= index; i++) {
         const nama = document.getElementById(`nama_${i}`).value.trim();
@@ -128,28 +139,49 @@
 
         const totalHK = target * norma;
         const orangPerHari = totalHK / hke;
-        const mandor = Math.ceil(orangPerHari / 10);
+
+        // Distribusi HKE ke dalam bulan-bulan dalam periode
+        const distribusi = {};
+        const totalHari = Math.ceil((tglAkhir - tglAwal) / (1000 * 60 * 60 * 24)) + 1;
+        let tgl = new Date(tglAwal);
+
+        for (let d = 0; d < totalHari; d++) {
+          const key = getMonthKey(tgl);
+          if (!distribusi[key]) distribusi[key] = { count: 0, date: new Date(tgl) };
+          distribusi[key].count++;
+          tgl.setDate(tgl.getDate() + 1);
+        }
+
+        // Hitung total hari kerja efektif per bulan (proporsional ke HKE)
+        const totalCount = Object.values(distribusi).reduce((a, b) => a + b.count, 0);
+
+        let html = `<div style='margin-top:1rem;'><h4>${nama}</h4>`;
+        html += `<table><tr><th>Bulan</th><th>Jumlah Hari (HKE Bulan)</th><th>Orang/Hari</th><th>Total HK Bulan</th><th>Mandor</th></tr>`;
+
+        for (const key in distribusi) {
+          const bulan = formatMonthName(distribusi[key].date);
+          const hkeBulan = (distribusi[key].count / totalCount) * hke;
+          const totalHKBulan = (totalHK / hke) * hkeBulan;
+          const mandor = Math.ceil(orangPerHari / 10);
+
+          html += `<tr><td>${bulan}</td><td>${hkeBulan.toFixed(1)}</td><td>${orangPerHari.toFixed(2)}</td><td>${totalHKBulan.toFixed(2)}</td><td>${mandor}</td></tr>`;
+        }
+
+        html += `</table>`;
+
+        const mandorTotal = Math.ceil(orangPerHari / 10);
         totalHKSemua += totalHK;
         totalOrangSemua += orangPerHari;
-        totalMandorSemua += mandor;
+        totalMandorSemua += mandorTotal;
 
-        output += `
-          <div style="margin-top:1rem;">
-            <h4>${nama}</h4>
-            <p><strong>Total HK:</strong> ${totalHK.toFixed(2)}</p>
-            <p><strong>Jumlah orang/hari:</strong> ${orangPerHari.toFixed(2)}</p>
-            <p><strong>Mandor dibutuhkan:</strong> ${mandor}</p>
-          </div>
-        `;
+        html += `<p><strong>Total HK Pekerjaan:</strong> ${totalHK.toFixed(2)} | <strong>Mandor:</strong> ${mandorTotal}</p></div>`;
+        output += html;
       }
 
-      output += `
-        <hr>
-        <h3>📈 Rekap Keseluruhan</h3>
+      output += `<hr><h3>📈 Rekap Keseluruhan</h3>
         <p><strong>Total HK Semua:</strong> ${totalHKSemua.toFixed(2)}</p>
         <p><strong>Total Orang per Hari Semua:</strong> ${totalOrangSemua.toFixed(2)}</p>
-        <p><strong>Total Mandor Dibutuhkan:</strong> ${totalMandorSemua}</p>
-      `;
+        <p><strong>Total Mandor Dibutuhkan:</strong> ${totalMandorSemua}</p>`;
 
       document.getElementById('hasil').innerHTML = output;
     }
