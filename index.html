@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kalkulator Kebutuhan Orang</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f8fafc;
+      color: #222;
+      max-width: 900px;
+      margin: 2rem auto;
+      padding: 1.5rem;
+      background-color: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    h2 { text-align: center; margin-bottom: 1rem; }
+    label { display: block; font-weight: 600; margin-top: 0.5rem; }
+    input {
+      width: 100%;
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      margin-top: 4px;
+    }
+    button {
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 10px 16px;
+      margin-top: 1rem;
+      cursor: pointer;
+    }
+    button:hover { background: #1d4ed8; }
+    .output {
+      background: #e0f2fe;
+      padding: 1rem;
+      border-radius: 8px;
+      margin-top: 1.5rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      text-align: center;
+      padding: 6px;
+    }
+    th { background: #2563eb; color: white; }
+    .pekerjaan-group {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      background: #f9fafb;
+    }
+  </style>
+</head>
+<body>
+  <h2>📋 Kalkulator Kebutuhan Orang per Hari (Multi-Pekerjaan)</h2>
+
+  <div id="container-pekerjaan"></div>
+
+  <button onclick="tambahPekerjaan()">+ Tambah Pekerjaan</button>
+  <button onclick="hitungSemua()">Hitung Semua</button>
+
+  <div class="output" id="hasil"></div>
+
+  <script>
+    let index = 0;
+
+    function tambahPekerjaan() {
+      index++;
+      const container = document.getElementById('container-pekerjaan');
+      const div = document.createElement('div');
+      div.className = 'pekerjaan-group';
+      div.innerHTML = `
+        <h3>Pekerjaan ${index}</h3>
+        <label>Nama pekerjaan</label>
+        <input type="text" id="nama_${index}" />
+
+        <label>Target (ha)</label>
+        <input type="number" id="target_${index}" step="0.01" />
+
+        <label>Norma HK/ha</label>
+        <input type="number" id="norma_${index}" step="0.01" />
+
+        <label>HKE (hari kerja efektif)</label>
+        <input type="number" id="hke_${index}" />
+
+        <label>Periode pekerjaan (tanggal awal)</label>
+        <input type="date" id="tglAwal_${index}" />
+
+        <label>Periode pekerjaan (tanggal akhir)</label>
+        <input type="date" id="tglAkhir_${index}" />
+      `;
+      container.appendChild(div);
+    }
+
+    function hitungSemua() {
+      if (index === 0) {
+        alert('Tambahkan minimal satu pekerjaan!');
+        return;
+      }
+
+      let totalHKSemua = 0;
+      let totalOrangSemua = 0;
+      let totalMandorSemua = 0;
+      let output = '<h3>Hasil Perhitungan Semua Pekerjaan</h3>';
+
+      for (let i = 1; i <= index; i++) {
+        const nama = document.getElementById(`nama_${i}`).value.trim();
+        const target = parseFloat(document.getElementById(`target_${i}`).value);
+        const norma = parseFloat(document.getElementById(`norma_${i}`).value);
+        const hke = parseFloat(document.getElementById(`hke_${i}`).value);
+        const tglAwal = new Date(document.getElementById(`tglAwal_${i}`).value);
+        const tglAkhir = new Date(document.getElementById(`tglAkhir_${i}`).value);
+
+        if (!nama || isNaN(target) || isNaN(norma) || isNaN(hke) || isNaN(tglAwal.getTime()) || isNaN(tglAkhir.getTime())) {
+          alert(`Data pekerjaan ${i} belum lengkap!`);
+          return;
+        }
+
+        const totalHK = target * norma;
+        const orangPerHari = totalHK / hke;
+        const mandor = Math.ceil(orangPerHari / 10);
+        totalHKSemua += totalHK;
+        totalOrangSemua += orangPerHari;
+        totalMandorSemua += mandor;
+
+        output += `
+          <div style="margin-top:1rem;">
+            <h4>${nama}</h4>
+            <p><strong>Total HK:</strong> ${totalHK.toFixed(2)}</p>
+            <p><strong>Jumlah orang/hari:</strong> ${orangPerHari.toFixed(2)}</p>
+            <p><strong>Mandor dibutuhkan:</strong> ${mandor}</p>
+          </div>
+        `;
+      }
+
+      output += `
+        <hr>
+        <h3>📈 Rekap Keseluruhan</h3>
+        <p><strong>Total HK Semua:</strong> ${totalHKSemua.toFixed(2)}</p>
+        <p><strong>Total Orang per Hari Semua:</strong> ${totalOrangSemua.toFixed(2)}</p>
+        <p><strong>Total Mandor Dibutuhkan:</strong> ${totalMandorSemua}</p>
+      `;
+
+      document.getElementById('hasil').innerHTML = output;
+    }
+  </script>
+</body>
+</html>
